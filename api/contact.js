@@ -19,15 +19,16 @@ export default async function handler(req) {
       })
     }
 
-    const host = process.env.SMTP_HOST
+    const host = process.env.SMTP_HOST || 'smtp.gmail.com'
     const port = Number(process.env.SMTP_PORT || 587)
     const user = process.env.SMTP_USER
     const pass = process.env.SMTP_PASS
     const secure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true'
+    const isGmail = /gmail\.com$/i.test(user || '') || /gmail\.com$/i.test(host || '')
     const from = process.env.SMTP_FROM || user
-    const to = process.env.CONTACT_EMAIL || 'zarahgalaxy0@gmail.com'
+    const to = process.env.CONTACT_EMAIL || user || 'zarahgalaxy0@gmail.com'
 
-    if (!host || !user || !pass) {
+    if (!user || !pass) {
       return new Response(JSON.stringify({ error: 'SMTP credentials are not configured.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -35,11 +36,14 @@ export default async function handler(req) {
     }
 
     const transport = nodemailer.createTransport({
-      host,
-      port,
-      secure,
+      host: isGmail ? 'smtp.gmail.com' : host,
+      port: isGmail ? 587 : port,
+      secure: isGmail ? false : secure,
       auth: { user, pass },
+      requireTLS: true,
     })
+
+    await transport.verify()
 
     await transport.sendMail({
       from,
@@ -68,7 +72,8 @@ export default async function handler(req) {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message || 'Something went wrong while submitting the form.' }), {
+    const message = error?.response?.body || error?.message || 'Something went wrong while submitting the form.'
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })
