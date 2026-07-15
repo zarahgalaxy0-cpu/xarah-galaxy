@@ -1,4 +1,4 @@
-export const config = { runtime: 'edge' }
+import nodemailer from 'nodemailer'
 
 export default async function handler(req) {
   if (req.method !== 'POST') {
@@ -19,46 +19,56 @@ export default async function handler(req) {
       })
     }
 
-    const emailTo = process.env.CONTACT_EMAIL || 'zarahgalaxy0@gmail.com'
-    const subject = `New contact form submission from ${name}`
-    const text = [
-      `Name: ${name}`,
-      `Email: ${email}`,
-      `Service: ${service || 'Not specified'}`,
-      '',
-      'Message:',
-      message,
-    ].join('\n')
+    const host = process.env.SMTP_HOST
+    const port = Number(process.env.SMTP_PORT || 587)
+    const user = process.env.SMTP_USER
+    const pass = process.env.SMTP_PASS
+    const secure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true'
+    const from = process.env.SMTP_FROM || user
+    const to = process.env.CONTACT_EMAIL || 'zarahgalaxy0@gmail.com'
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY || ''}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
-        to: [emailTo],
-        subject,
-        text,
-      }),
-    })
-
-    const data = await response.json().catch(() => ({}))
-
-    if (!response.ok) {
-      return new Response(JSON.stringify({ error: data.error?.message || 'Unable to send email.' }), {
-        status: 502,
+    if (!host || !user || !pass) {
+      return new Response(JSON.stringify({ error: 'SMTP credentials are not configured.' }), {
+        status: 500,
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
-    return new Response(JSON.stringify({ ok: true, message: 'Contact request received.' }), {
+    const transport = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: { user, pass },
+    })
+
+    await transport.sendMail({
+      from,
+      to,
+      replyTo: email,
+      subject: `New contact form submission from ${name}`,
+      text: [
+        `Name: ${name}`,
+        `Email: ${email}`,
+        `Service: ${service || 'Not specified'}`,
+        '',
+        'Message:',
+        message,
+      ].join('\n'),
+      html: `
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Service:</strong> ${service || 'Not specified'}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, '<br />')}</p>
+      `,
+    })
+
+    return new Response(JSON.stringify({ ok: true, message: 'Contact request sent to your inbox.' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Something went wrong while submitting the form.' }), {
+    return new Response(JSON.stringify({ error: error.message || 'Something went wrong while submitting the form.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })
