@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-navy-950 text-white font-body antialiased;
+}
+
+h1, h2, h3, h4 {
+  @apply font-display;
+}
+
+::selection {
+  background-color: #C9A14A;
+  color: #0A1530;
+}
+
+/* Thin gold scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0A1530;
+}
+::-webkit-scrollbar-thumb {
+  background: #A87F2E;
+  border-radius: 999px;
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.gold-divider {
+  background: linear-gradient(90deg, transparent, #C9A14A, transparent);
+  height: 1px;
+}
+
+.section-eyebrow {
+  @apply text-gold-500 tracking-[0.3em] text-xs font-semibold uppercase;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-gold-500 px-7 py-3 text-navy-950 font-semibold tracking-wide shadow-lg shadow-gold-500/20 transition-all duration-300 hover:bg-gold-400 hover:shadow-gold-400/40 hover:-translate-y-0.5;
+}
+
+.btn-outline {
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-gold-500/60 px-7 py-3 text-gold-200 font-semibold tracking-wide transition-all duration-300 hover:border-gold-400 hover:bg-gold-500/10 hover:-translate-y-0.5;
+}
+
+.card {
+  @apply rounded-2xl border border-white/10 bg-navy-900/60 backdrop-blur-sm transition-all duration-300 hover:border-gold-500/40 hover:-translate-y-1;
+}
